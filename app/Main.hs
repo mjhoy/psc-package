@@ -314,20 +314,19 @@ listSourcePaths = do
 -- | Helper for calling through to @purs@
 --
 -- Extra args will be appended to the options
-exec :: [String] -> Bool -> [String] -> IO ()
-exec execNames onlyDeps passthroughOptions = do
+exec :: String -> Bool -> [String] -> IO ()
+exec execName onlyDeps passthroughOptions = do
   pkg <- readPackageFile
   updateImpl pkg
 
   paths <- getPaths
-  let cmdParts = tail execNames
-      srcParts = [ "src" </> "**" </> "*.purs" | not onlyDeps ]
+  let srcParts = [ "src" </> "**" </> "*.purs" | not onlyDeps ]
   exit
     =<< Process.waitForProcess
     =<< Process.runProcess
-          (head execNames)
-          (cmdParts <> passthroughOptions
-                    <> map Path.encodeString (srcParts <> paths))
+          execName
+          (passthroughOptions
+           <> map Path.encodeString (srcParts <> paths))
           Nothing -- no special path to the working dir
           Nothing -- no env vars
           Nothing -- use existing stdin
@@ -468,13 +467,13 @@ main = do
             (Opts.info (install <$> pkg Opts.<**> Opts.helper)
             (Opts.progDesc "Install the named package"))
         , Opts.command "build"
-            (Opts.info (exec ["purs", "compile"]
+            (Opts.info (exec "psc"
                         <$> onlyDeps "Compile only the package's dependencies"
                         <*> passthroughArgs "purs compile"
                         Opts.<**> Opts.helper)
             (Opts.progDesc "Build the current package and dependencies"))
         , Opts.command "repl"
-            (Opts.info (exec ["purs", "repl"]
+            (Opts.info (exec "psci"
                         <$> onlyDeps "Load only the package's dependencies"
                         <*> passthroughArgs "purs repl"
                         Opts.<**> Opts.helper)
